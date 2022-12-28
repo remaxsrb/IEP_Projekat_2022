@@ -1,0 +1,7 @@
+env/
+.vscode/
+.idea/
+venv/
+__pycache__/
+.terraform/
+

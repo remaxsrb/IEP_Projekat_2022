@@ -1,0 +1,124 @@
+version: '3'
+services:
+  authentication:
+    build: ./authentication
+    ports:
+      - "5000:80"
+    environment:
+      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_USER=authentication"
+      - "MYSQL_PASSWORD=authentication"
+      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_PORT=3306"
+      - "TZ=Europe/Belgrade"
+    networks:
+        authentication:
+  authenticationdb:
+    image: mysql
+    environment:
+      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_USER=authentication"
+      - "MYSQL_PASSWORD=authentication"
+      - "MYSQL_ROOT_PASSWORD=root"
+      - "TZ=Europe/Belgrade"
+    volumes:
+      - authenticationdbvolume:/var/lib/mysql
+    networks:
+      authentication:
+  authdbmigrate:
+    build:
+      context: ./
+      dockerfile: migrations/authenticationdbmigration.dockerfile
+    environment:
+      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_USER=authentication"
+      - "MYSQL_PASSWORD=authentication"
+      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_PORT=3306"
+      - "TZ=Europe/Belgrade"
+    networks:
+      authentication:
+
+  admin:
+    build:
+      context: ./store/admin
+    ports:
+      - "5001:80"
+    environment:
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_PORT=3306"
+      - "TZ=Europe/Belgrade"
+    networks:
+      admin_store:
+
+  storedb:
+    image: mysql
+    environment:
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_ROOT_PASSWORD=root"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "TZ=Europe/Belgrade"
+    volumes:
+      - storedbvolume:/var/lib/mysql
+
+  warehouse:
+    build:
+      context: ./store/warehouse
+    ports:
+      - "5002:80"
+    networks:
+      redis_store:
+
+  daemon:
+    build:
+      context: ./store/daemon
+    environment:
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_PORT=3306"
+      - "TZ=Europe/Belgrade"
+    networks:
+      daemon_redis:
+      daemon_storedb:
+
+  storedbmigrate:
+    build:
+      context: ./
+      dockerfile: migrations/storedbmigration.dockerfile
+    environment:
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_PORT=3306"
+      - "TZ=Europe/Belgrade"
+    networks:
+      admin_store:
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    networks:
+      authentication:
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  authenticationdbvolume:
+  storedbvolume:
+networks:
+  authentication:
+  redis_store:
+  admin_store:
+  daemon_storedb:
+  daemon_redis:
