@@ -1,17 +1,15 @@
-FROM ubuntu
+FROM python:3
 
-RUN apt update -y && \
-    apt install -y python3 python3-pip && \
-    pip3 install --upgrade pip
+RUN mkdir -p /opt/src/authentication
+WORKDIR /opt/src/authentication
 
-WORKDIR /app
+COPY ../authentication/application.py ./application.py
+COPY ../authentication/configuration.py ./configuration.py
+COPY ../authentication/models.py ./models.py
+COPY ../authentication/requirements.txt ./requirements.txt
 
-EXPOSE 80
+RUN pip install -r ./requirements.txt
 
-ADD requirements.txt .
+ENV PYTHONPATH="/opt/src/authentication"
 
-RUN pip3 install -r requirements.txt
-
-ADD . .
-
-ENTRYPOINT ["python3", "/app/application.py"]
+ENTRYPOINT ["python", "./application.py"]

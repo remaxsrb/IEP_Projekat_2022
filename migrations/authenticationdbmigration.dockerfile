@@ -1,15 +1,13 @@
-FROM ubuntu
+FROM python:3
 
-RUN apt update -y && \
-    apt install -y python3 python3-pip && \
-    pip3 install --upgrade pip
+RUN mkdir -p /opt/src/authentication
+WORKDIR /opt/src/authentication
 
-WORKDIR /app
+COPY ../authentication/migrate.py ./migrate.py
+COPY ../authentication/configuration.py ./configuration.py
+COPY ../authentication/models.py ./models.py
+COPY ../authentication/requirements.txt ./requirements.txt
 
-ADD authentication/requirements.txt .
+RUN pip install -r ./requirements.txt
 
-RUN pip3 install -r requirements.txt
-
-COPY authentication/migrate.py authentication/models.py authentication/configuration.py ./
-
-ENTRYPOINT ["python3", "/app/migrate.py"]
+ENTRYPOINT ["python", "./migrate.py"]

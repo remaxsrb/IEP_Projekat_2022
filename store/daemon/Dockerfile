@@ -1,15 +1,15 @@
-FROM ubuntu
+FROM python:3
 
-RUN apt update -y && \
-    DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-pip tzdata && \
-    pip3 install --upgrade pip
+RUN mkdir -p /opt/src/authentication
+WORKDIR /opt/src/authentication
 
-WORKDIR /app
+COPY application.py ./application.py
+COPY configuration.py ./configuration.py
+COPY models.py ./models.py
+COPY requirements.txt ./requirements.txt
 
-ADD requirements.txt .
+RUN pip install -r ./requirements.txt
 
-RUN pip3 install -r requirements.txt
+ENV PYTHONPATH="/opt/src/authentication"
 
-ADD . .
-
-ENTRYPOINT ["python3", "/app/application.py"]
+ENTRYPOINT ["python", "./application.py"]
