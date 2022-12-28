@@ -17,6 +17,6 @@ manager.add_command('db', MigrateCommand)
 
 
 if __name__ == '__main__':
-    if(not database_exists(Configuration.SQLALCHEMY_DATABASE_URI)):
+    if not database_exists(Configuration.SQLALCHEMY_DATABASE_URI):
         create_database(Configuration.SQLALCHEMY_DATABASE_URI)
     manager.run()
