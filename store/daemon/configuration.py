@@ -10,4 +10,4 @@ databasePort = os.environ["MYSQL_PORT"]
 class Configuration:
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{databaseUser}:{databasePass}@{databaseHost}:{databasePort}/{databaseName}"
     REDIS_HOST = "redis"
-    REDIS_VOTE_QUEUE = "warehouse_queue"
+    REDIS_WAREHOUSE_QUEUE = "warehouse_queue"

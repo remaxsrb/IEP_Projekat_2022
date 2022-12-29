@@ -54,14 +54,5 @@ def updateStock():
     return Response(status=200)
 
 
-        # product = Product(name=product_name, price=product_price, stock=product_amount)
-        # database.session.add(product)
-        # database.session.commit()
-        #
-        # for category in product_categories_list:
-        #     database.session.add(Category(name=category))
-        #     database.session.commit()
-
-
 if __name__ == '__main__':
     application.run(debug=True, host='0.0.0.0', port=5001)
