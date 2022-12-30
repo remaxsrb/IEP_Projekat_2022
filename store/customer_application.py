@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, json, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from configuration import Configuration
-from roleCheck import roleCheck
+from roleCheck import role_check
 from models import Product, ProductCategory, Category, Order, database, OrderedProducts
 from sqlalchemy import and_, or_
 from datetime import datetime
@@ -11,7 +11,7 @@ application.config.from_object(Configuration)
 
 
 @application.route('/search?name=<PRODUCT_NAME>&category=<CATEGORY_NAME>', methods=["GET"])
-@roleCheck("customer")
+@role_check("customer")
 def search(name, category):
     # kategorije koje sadrze category parametar u nazivu
     categories = Category.query.join(ProductCategory).join(Product).filter(
@@ -39,7 +39,7 @@ def search(name, category):
 
 
 @application.route('/order', methods=["POST"])
-@roleCheck("customer")
+@role_check("customer")
 def order():
     requests = [item.strip() for item in request.json.get('requests', '').split(",")]
     customer = get_jwt_identity()
@@ -116,17 +116,18 @@ def order():
 
 
 @application.route('/status', methods=["GET"])
-@roleCheck("customer")
+@role_check("customer")
 def status():
 
+    customer = get_jwt_identity()
+    orders = Order.query.filter(Order.customer == customer).all()
 
-    orders = Order.query.all()
     response = []
-    for order in orders:
+    for current_order in orders:
 
         orderedproducts = Product.query.join(OrderedProducts).join(Order).filter(
             and_(
-                *[Order.id == order.id],
+                *[Order.id == current_order.id],
 
             )
         ).all()
@@ -152,16 +153,11 @@ def status():
             }
             response_products.append(response_product)
 
-        orderstatus = "TRUE"
-
-        if not order.status:
-            orderstatus = "PENDING"
-
         ord = {
             "products": response_products,
-            "price": float(order.totalprice),
-            "status": orderstatus,
-            "timestamp": str(order.timeofcreation)
+            "price": float(current_order.totalprice),
+            "status": current_order.orderstatus,
+            "timestamp": str(current_order.timeofcreation)
         }
 
         response.append(ord)

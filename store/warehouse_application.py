@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, json, Response
 from flask_jwt_extended import jwt_required
 from redis import Redis
 from configuration import Configuration
-from roleCheck import roleCheck
+from roleCheck import role_check
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
@@ -13,7 +13,7 @@ application.config.from_object(Configuration)
 
 @application.route('/update', methods=["POST"])
 @jwt_required(refresh=True)
-@roleCheck("warehouseworker")
+@role_check("warehouseworker")
 def updateStock():
     if request.files["file"] is None:
         return jsonify(message='Field file missing.'), 400
