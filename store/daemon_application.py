@@ -3,7 +3,7 @@ from sqlalchemy import and_
 
 from configuration import Configuration
 from database import Session
-from models import Product, Category, ProductCategory, OrderedProducts
+from models import Product, Category, ProductCategory, OrderedProducts, Order
 
 import sys
 import threading
@@ -76,7 +76,25 @@ def checkProducts():
                             OrderedProducts.received_quantity < OrderedProducts.requested_quantity
                         )).all()
 
+                        for ordered_product in potential_orders:
+                            needed_quantity = ordered_product.requested_quantity - ordered_product.recieved_quantity
+                            provided_quantity = needed_quantity if needed_quantity < product.stock else product.stock
+                            product.stock -= provided_quantity
+                            ordered_product.recieved_quantity += provided_quantity
 
+                            completed_order = OrderedProducts.query().filter(and_(
+                                OrderedProducts.orderId == ordered_product.orderId,
+                                OrderedProducts.received_quantity < OrderedProducts.requested_quantity
+                            )).first()
+
+                            if not completed_order:
+                                order = Order.query.filter(Order.id == ordered_product.orderId).first()
+                                order.status = True
+
+                            session.commit()
+
+                            if product.stock == 0:
+                                break
 
                     else:
                         logging.debug(f'Existing and imported product categories are not matching')

@@ -33,7 +33,8 @@ services:
     networks:
       authentication:
 
-  authdbmigration:
+  authDBMigration:
+    image: authenticationdbmigration
     environment:
       - "MYSQL_DATABASE=authentication"
       - "MYSQL_USER=authentication"
@@ -49,9 +50,10 @@ services:
       authentication:
     build:
       context: .
-      dockerfile: migrations/authenticationdbmigration.dockerfile
+      dockerfile: authenticationdbmigration.dockerfile
 
   authentication:
+    image: authentication
     environment:
       - "MYSQL_DATABASE=authentication"
       - "MYSQL_USER=authentication"
@@ -61,13 +63,13 @@ services:
       - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
     depends_on:
-      - authdbmigration
+      - authDBMigration
     ports:
       - "5000:5000"
     networks:
       authentication:
     build:
-      context: ./authentication
+      context: .
 
   storeDB:
     image: mysql
@@ -87,7 +89,8 @@ services:
       customer:
       admin:
 
-  storedbmigration:
+  storeDBMigration:
+    image: storedbmigration
     environment:
       - "MYSQL_DATABASE=store"
       - "MYSQL_USER=store"
@@ -104,9 +107,10 @@ services:
       admin:
     build:
       context: .
-      dockerfile: migrations/storedbmigration.dockerfile
+      dockerfile: storedbmigration.dockerfile
 
   warehouse:
+    image: warehouse
     environment:
       - "MYSQL_DATABASE=store"
       - "MYSQL_USER=store"
@@ -115,14 +119,17 @@ services:
       - "MYSQL_PORT=3306"
       - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
-
+    depends_on:
+      - storeDBMigration
     ports:
       - "5001:5001"
     networks:
       warehouse:
     build:
-      context: ./store/warehouse
+      context: .
+      dockerfile: warehouse.dockerfile
   daemon:
+    image: daemon
     environment:
       - "MYSQL_DATABASE=store"
       - "MYSQL_USER=store"
@@ -133,12 +140,14 @@ services:
       - "MYSQL_ROOT_PASSWORD=root"
 
     depends_on:
-      - storedbmigration
+      - storeDBMigration
     networks:
       daemon:
     build:
-      context: ./store/daemon
+      context: .
+      dockerfile: daemon.dockerfile
   customer:
+    image: daemon
     environment:
       - "MYSQL_DATABASE=store"
       - "MYSQL_USER=store"
@@ -149,14 +158,16 @@ services:
       - "MYSQL_ROOT_PASSWORD=root"
 
     depends_on:
-      - storedbmigration
+      - storeDBMigration
     ports:
       - "5002:5002"
     networks:
       customer:
     build:
-      context: ./store/customer
+      context: .
+      dockerfile: customer.dockerfile
   admin:
+    image: admin
     environment:
       - "MYSQL_DATABASE=store"
       - "MYSQL_USER=store"
@@ -167,13 +178,14 @@ services:
       - "MYSQL_ROOT_PASSWORD=root"
 
     depends_on:
-      - storedbmigration
+      - storeDBMigration
     ports:
       - "5003:5003"
     networks:
       admin:
     build:
-      context: ./store/admin
+      context: .
+      dockerfile: admin.dockerfile
 volumes:
   authentication_db_data:
   store_db_data:

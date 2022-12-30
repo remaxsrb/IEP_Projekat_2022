@@ -41,9 +41,9 @@ class Category(database.Model):
 class Order(database.Model):
     __tablename__ = "orders"
     id = database.Column(database.Integer, primary_key=True)
-    totalprice = database.Column(database.Float, nullable=False)
+    totalprice = database.Column(database.FLOAT, nullable=False)
     timeofcreation = database.Column(database.DateTime, nullable=False)
     status = database.Column(database.Boolean, nullable=False)
-    # true za dostupnu, false za cekanje
+    customer = database.Column(database.String(256), nullable=False, unique=True)
 
     products = database.relationship("Product", secondary=ProductCategory.__tablename__, back_populates="orders")

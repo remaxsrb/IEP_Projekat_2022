@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, json, Response
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from configuration import Configuration
 from roleCheck import roleCheck
 from models import Product, ProductCategory, Category, Order, database, OrderedProducts
@@ -42,7 +42,7 @@ def search(name, category):
 @roleCheck("customer")
 def order():
     requests = [item.strip() for item in request.json.get('requests', '').split(",")]
-
+    customer = get_jwt_identity()
     if len(requests) == 0:
         return jsonify(message='Field requests is missing.'), 400
 
@@ -59,37 +59,37 @@ def order():
     ordered_products = []
     for req in requests:
 
-        req_id = req.json.get('id', '')
-        req_quantity = req.json.get('quantity', '')
+        requested_product_id = req.json.get('id', '')
+        requested_product_quantity = req.json.get('quantity', '')
 
-        if len(req_id) == 0:
+        if len(requested_product_id) == 0:
             return jsonify(message=f'Field id is missing for request number {request_number}.'), 400
-        if len(req_quantity) == 0:
+        if len(requested_product_quantity) == 0:
             return jsonify(message=f'Field quantity is missing for request number {request_number}.'), 400
 
-        if int(req_id) < 1:
+        if int(requested_product_id) < 1:
             return jsonify(message=f'Invalid product id for request number{request_number}.'), 400
-        if int(req_quantity) < 1:
+        if int(requested_product_quantity) < 1:
             return jsonify(message=f'Invalid product quantity for request number {request_number}.'), 400
 
-        if int(req_id) not in existing_ids:
+        if int(requested_product_id) not in existing_ids:
             return jsonify(message=f'Invalid product for request number {request_number}.'), 400
 
         for product in existing_products:
-            if product.id != int(req_id):
+            if product.id != int(requested_product_id):
                 pass
-            rec_quantity = 0
+            requested_quantity = 0
 
-            if product.stock < int(req_quantity):
+            if product.stock < int(requested_product_quantity):
                 order_status = False
-                rec_quantity = product.stock
+                requested_quantity = product.stock
             else:
-                rec_quantity = req_quantity
+                requested_quantity = requested_product_quantity
 
             requested_product_meta = {
-                "req_id": req_id,
-                "req_quantity": req_quantity,
-                "rec_quantity": rec_quantity
+                "requested_product_id": requested_product_id,
+                "requested_product_quantity": requested_product_quantity,
+                "requested_quantity": requested_quantity
             }
 
             ordered_products.append(requested_product_meta)
@@ -99,16 +99,16 @@ def order():
         request_number += 1
 
     order = Order(totalprice=total_price, timeofcreation=datetime.fromisoformat(str(datetime.now())),
-                  status=order_status)
+                  status=order_status, customer=customer)
     database.session.add(order)
     database.session.commit()
 
     for product in ordered_products:
         ordered_product = OrderedProducts(
-            productId=product.get("req_id"),
+            productId=product.get("requested_product_id"),
             orderId=order.id,
-            requested_quantity=product.get("req_quantity"),
-            received_quantity="rec_quantity")
+            requested_quantity=product.get("requested_product_quantity"),
+            received_quantity="requested_quantity")
         database.session.add(ordered_product)
         database.session.commit()
 
@@ -118,6 +118,8 @@ def order():
 @application.route('/status', methods=["GET"])
 @roleCheck("customer")
 def status():
+
+
     orders = Order.query.all()
     response = []
     for order in orders:
