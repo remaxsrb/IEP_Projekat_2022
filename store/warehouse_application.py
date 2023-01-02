@@ -50,7 +50,7 @@ def update_stock():
 
     with Redis(host=Configuration.REDIS_HOST, port=6379) as redis:
         for product in products:
-            redis.publish(Configuration.REDIS_PRODUCT_LIST, json.dumps(product))
+            redis.publish(Configuration.REDIS_WAREHOUSE_QUEUE, json.dumps(product))
     return Response(status=200)
 
 

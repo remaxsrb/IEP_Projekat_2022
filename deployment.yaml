@@ -21,12 +21,11 @@ services:
   authenticationDB:
     image: mysql
     environment:
-      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_HOST=authenticationdb"
       - "MYSQL_USER=authentication"
       - "MYSQL_PASSWORD=authentication"
-      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_DATABASE=authentication"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
     volumes:
       - authentication_db_data:/var/lib/mysql
@@ -36,12 +35,11 @@ services:
   authDBMigration:
     image: authenticationdbmigration
     environment:
-      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_HOST=authenticationdb"
       - "MYSQL_USER=authentication"
       - "MYSQL_PASSWORD=authentication"
-      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_DATABASE=authentication"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
     depends_on:
       - authenticationDB
@@ -55,12 +53,11 @@ services:
   authentication:
     image: authentication
     environment:
-      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_HOST=authenticationdb"
       - "MYSQL_USER=authentication"
       - "MYSQL_PASSWORD=authentication"
-      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_DATABASE=authentication"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
     depends_on:
       - authDBMigration
@@ -74,12 +71,11 @@ services:
   storeDB:
     image: mysql
     environment:
-      - "MYSQL_DATABASE=store"
+      - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
       - "MYSQL_PASSWORD=store"
-      - "MYSQL_HOST=storedb"
+      - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
 
     volumes:
@@ -92,13 +88,13 @@ services:
   storeDBMigration:
     image: storedbmigration
     environment:
-      - "MYSQL_DATABASE=store"
+      - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
       - "MYSQL_PASSWORD=store"
-      - "MYSQL_HOST=storedb"
+      - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
+
     depends_on:
       - storeDB
     networks:
@@ -112,12 +108,11 @@ services:
   warehouse:
     image: warehouse
     environment:
-      - "MYSQL_DATABASE=store"
+      - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
       - "MYSQL_PASSWORD=store"
-      - "MYSQL_HOST=storedb"
+      - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
     depends_on:
       - storeDBMigration
@@ -131,14 +126,12 @@ services:
   daemon:
     image: daemon
     environment:
-      - "MYSQL_DATABASE=store"
+      - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
       - "MYSQL_PASSWORD=store"
-      - "MYSQL_HOST=storedb"
+      - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
-
     depends_on:
       - storeDBMigration
     networks:
@@ -147,16 +140,14 @@ services:
       context: .
       dockerfile: daemon.dockerfile
   customer:
-    image: daemon
+    image: customer
     environment:
-      - "MYSQL_DATABASE=store"
+      - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
       - "MYSQL_PASSWORD=store"
-      - "MYSQL_HOST=storedb"
+      - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
-
     depends_on:
       - storeDBMigration
     ports:
@@ -169,14 +160,12 @@ services:
   admin:
     image: admin
     environment:
-      - "MYSQL_DATABASE=store"
+      - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
       - "MYSQL_PASSWORD=store"
-      - "MYSQL_HOST=storedb"
+      - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
-      - "TZ=Europe/Belgrade"
       - "MYSQL_ROOT_PASSWORD=root"
-
     depends_on:
       - storeDBMigration
     ports:
