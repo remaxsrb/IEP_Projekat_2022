@@ -1,9 +1,9 @@
 from flask import Flask, jsonify
 from configuration import Configuration
-from models import database, Product, Category, ProductCategory, OrderedProducts, Order
+from models import database, Product, Category, ProductCategory, OrderedProducts
 from roleCheck import role_check
 
-from sqlalchemy import and_, func
+from sqlalchemy import func
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
@@ -31,12 +31,11 @@ def product_statistics():
 
 
 @application.route('/categoryStatistics', methods=["GET"])
-@roleCheck("admin")
+@role_check("admin")
 def product_statistics():
-
-    query_result = Category.query.outerjoin(ProductCategory).outerjoin\
-        (OrderedProducts, ProductCategory.productId == OrderedProducts.productId).group_by(Category.name).order_by\
-        (func.sum(func.coalesce(OrderedProducts.requested_quantity, 0)).desc(), Category.name)\
+    query_result = Category.query.outerjoin(ProductCategory).outerjoin \
+        (OrderedProducts, ProductCategory.productId == OrderedProducts.productId).group_by(Category.name).order_by \
+        (func.sum(func.coalesce(OrderedProducts.requested_quantity, 0)).desc(), Category.name) \
         .with_entities(Category.name).all()
 
     response = []
@@ -49,7 +48,6 @@ def product_statistics():
         )
 
     return jsonify(statistics=response), 200
-
 
 
 if __name__ == '__main__':

@@ -13,3 +13,5 @@ class Configuration:
     JWT_SECRET_KEY = "test_secret_key"
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    REDIS_HOST = "redis"
+    REDIS_PRODUCT_LIST = "products"

@@ -42,7 +42,7 @@ class Order(database.Model):
     __tablename__ = "orders"
     id = database.Column(database.Integer, primary_key=True)
     totalprice = database.Column(database.FLOAT, nullable=False)
-    timeofcreation = database.Column(database.DateTime, nullable=False)
+    timestamp = database.Column(database.DateTime, nullable=False)
     status = database.Column(database.Boolean, nullable=False)
     customer = database.Column(database.String(256), nullable=False, unique=True)
 

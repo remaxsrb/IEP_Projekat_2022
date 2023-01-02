@@ -98,7 +98,7 @@ def order():
 
         request_number += 1
 
-    order = Order(totalprice=total_price, timeofcreation=datetime.fromisoformat(str(datetime.now())),
+    order = Order(totalprice=total_price, timestamp=datetime.fromisoformat(str(datetime.now())),
                   status=order_status, customer=customer)
     database.session.add(order)
     database.session.commit()
@@ -125,7 +125,7 @@ def status():
     response = []
     for current_order in orders:
 
-        orderedproducts = Product.query.join(OrderedProducts).join(Order).filter(
+        ordered_products = Product.query.join(OrderedProducts).join(Order).filter(
             and_(
                 *[Order.id == current_order.id],
 
@@ -134,7 +134,7 @@ def status():
 
         response_products = []
 
-        for product in orderedproducts:
+        for product in ordered_products:
             categories = Product.query.join(ProductCategory).join(Category).filter(
                 and_(
                     *[Product.id == product.id],
@@ -148,7 +148,7 @@ def status():
             response_product = {
                 "categories": category_names,
                 "name": product.name,
-                "recieved": OrderedProducts.query.filter_by(productId=product.id).first().received_quantity,
+                "received": OrderedProducts.query.filter_by(productId=product.id).first().received_quantity,
                 "requested": OrderedProducts.query.filter_by(productId=product.id).first().requested_quantity
             }
             response_products.append(response_product)
@@ -157,7 +157,7 @@ def status():
             "products": response_products,
             "price": float(current_order.totalprice),
             "status": current_order.orderstatus,
-            "timestamp": str(current_order.timeofcreation)
+            "timestamp": str(current_order.timestamp)
         }
 
         response.append(ord)
