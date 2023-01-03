@@ -2,13 +2,14 @@ import csv
 import io
 
 from flask import Flask, request, jsonify, json, Response
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, JWTManager
 from redis import Redis
 from configuration import Configuration
 from roleCheck import role_check
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
+jwt = JWTManager(application)
 
 
 @application.route('/update', methods=["POST"])

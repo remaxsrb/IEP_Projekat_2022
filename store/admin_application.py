@@ -1,4 +1,6 @@
 from flask import Flask, jsonify
+from flask_jwt_extended import JWTManager
+
 from configuration import Configuration
 from models import database, Product, Category, ProductCategory, OrderedProducts
 from roleCheck import role_check
@@ -7,6 +9,7 @@ from sqlalchemy import func
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
+jwt = JWTManager(application)
 
 
 @application.route('/productStatistics', methods=["GET"])
@@ -32,7 +35,7 @@ def product_statistics():
 
 @application.route('/categoryStatistics', methods=["GET"])
 @role_check("admin")
-def product_statistics():
+def category_statistics():
     query_result = Category.query.outerjoin(ProductCategory).outerjoin \
         (OrderedProducts, ProductCategory.productId == OrderedProducts.productId).group_by(Category.name).order_by \
         (func.sum(func.coalesce(OrderedProducts.requested_quantity, 0)).desc(), Category.name) \

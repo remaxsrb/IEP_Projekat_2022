@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, json, Response
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, JWTManager
 from configuration import Configuration
 from roleCheck import role_check
 from models import Product, ProductCategory, Category, Order, database, OrderedProducts
@@ -8,6 +8,7 @@ from datetime import datetime
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
+jwt = JWTManager(application)
 
 
 @application.route('/search?name=<PRODUCT_NAME>&category=<CATEGORY_NAME>', methods=["GET"])
@@ -118,7 +119,6 @@ def order():
 @application.route('/status', methods=["GET"])
 @role_check("customer")
 def status():
-
     customer = get_jwt_identity()
     orders = Order.query.filter(Order.customer == customer).all()
 
