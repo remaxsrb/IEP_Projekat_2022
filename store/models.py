@@ -29,6 +29,8 @@ class Product(database.Model):
     categories = database.relationship("Category", secondary=ProductCategory.__tablename__, back_populates="products")
     orders = database.relationship("Order", secondary=ProductCategory.__tablename__, back_populates="products")
 
+    def __repr__(self):
+        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
 
 class Category(database.Model):
     __tablename__ = "categories"
@@ -37,7 +39,8 @@ class Category(database.Model):
 
     products = database.relationship("Product", secondary=ProductCategory.__tablename__, back_populates="categories")
 
-
+    def __repr__(self):
+        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
 class Order(database.Model):
     __tablename__ = "orders"
     id = database.Column(database.Integer, primary_key=True)
@@ -47,3 +50,6 @@ class Order(database.Model):
     customer = database.Column(database.String(256), nullable=False, unique=True)
 
     products = database.relationship("Product", secondary=ProductCategory.__tablename__, back_populates="orders")
+
+    def __repr__(self):
+        return {col.name: getattr(self, col.name) for col in self.__table__.columns}

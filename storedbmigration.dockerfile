@@ -1,7 +1,7 @@
 FROM python:3
 
-RUN mkdir -p /opt/src/authentication
-WORKDIR /opt/src/authentication
+RUN mkdir -p /opt/src/store
+WORKDIR /opt/src/store
 
 COPY store/migrate.py ./migrate.py
 COPY store/configuration.py ./configuration.py

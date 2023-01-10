@@ -1,6 +1,6 @@
 from flask import Flask, request, Response, jsonify
 from configuration import Configuration
-from models import database, User, UserRole
+from models import database, User
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, create_refresh_token, get_jwt, \
     get_jwt_identity
 from sqlalchemy import and_
@@ -9,7 +9,6 @@ import re
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
-jwt = JWTManager(application)
 
 
 @application.route("/register", methods=["POST"])
@@ -49,21 +48,16 @@ def register():
     if email_exists:
         return jsonify(message='Email already exists.'), 400
 
-    user = User(email=email, password=password, forename=forename, surname=surname)
+    role = "customer" if usertype else "manager"
+
+    user = User(email=email, password=password, forename=forename, surname=surname, role=role)
     database.session.add(user)
     database.session.commit()
 
-    user_role = None
+    return jsonify(message='Registration successful!'), 200
 
-    if usertype:
-        user_role = UserRole(userId=user.id, roleId=2)
-    else:
-        user_role = UserRole(userId=user.id, roleId=3)
 
-    database.session.add(user_role)
-    database.session.commit()
-
-    return Response(status=200)
+jwt = JWTManager(application)
 
 
 @application.route('/login', methods=['POST'])
@@ -88,9 +82,9 @@ def login():
         return jsonify(message='Invalid credentials.'), 400
 
     additional_claims = {
-        'forename': str(user.forename),
-        'surname': str(user.surname),
-        'roles': [str(role) for role in user.roles]
+        "forename": user.forename,
+        "surname": user.surname,
+        "roles": user.role
     }
 
     access_token = create_access_token(identity=user.email, additional_claims=additional_claims)
@@ -120,6 +114,11 @@ def refresh():
 @application.route('/delete', methods=['POST'])
 @jwt_required(refresh=True)
 def delete():
+    identity = get_jwt_identity()
+    refresh_claims = get_jwt()
+    if 'admin' not in refresh_claims['roles']:
+        return jsonify(msg='Missing Authorization Header'), 401
+
     email = request.json.get('email', '')
 
     if len(email) == 0 or not email:

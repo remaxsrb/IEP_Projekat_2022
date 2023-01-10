@@ -21,7 +21,7 @@ services:
   authenticationDB:
     image: mysql
     environment:
-      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_HOST=authentication"
       - "MYSQL_USER=authentication"
       - "MYSQL_PASSWORD=authentication"
       - "MYSQL_DATABASE=authentication"
@@ -47,7 +47,7 @@ services:
     networks:
       authentication:
     build:
-      context: .
+      context: ./authentication
       dockerfile: authenticationdbmigration.dockerfile
 
   authentication:
