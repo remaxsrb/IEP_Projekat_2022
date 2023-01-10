@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, json, Response
-from flask_jwt_extended import jwt_required, get_jwt_identity, JWTManager
+from flask_jwt_extended import jwt_required, get_jwt_identity, JWTManager, get_jwt
 from configuration import Configuration
 from roleCheck import role_check
 from models import Product, ProductCategory, Category, Order, database, OrderedProducts
@@ -12,8 +12,12 @@ jwt = JWTManager(application)
 
 
 @application.route('/search?name=<PRODUCT_NAME>&category=<CATEGORY_NAME>', methods=["GET"])
-@role_check("customer")
+# @role_check("customer")
 def search(name, category):
+    refresh_claims = get_jwt()
+    if refresh_claims["roles"].strip() not in ["customer"]:
+        return jsonify(msg="Missing authorization header"), 401
+
     # kategorije koje sadrze category parametar u nazivu
     categories = Category.query.join(ProductCategory).join(Product).filter(
         and_(
@@ -40,8 +44,12 @@ def search(name, category):
 
 
 @application.route('/order', methods=["POST"])
-@role_check("customer")
+# @role_check("customer")
 def order():
+    refresh_claims = get_jwt()
+    if refresh_claims["roles"].strip() not in ["customer"]:
+        return jsonify(msg="Missing authorization header"), 401
+
     requests = [item.strip() for item in request.json.get('requests', '').split(",")]
     customer = get_jwt_identity()
     if len(requests) == 0:
@@ -119,6 +127,7 @@ def order():
 @application.route('/status', methods=["GET"])
 @role_check("customer")
 def status():
+
     customer = get_jwt_identity()
     orders = Order.query.filter(Order.customer == customer).all()
 

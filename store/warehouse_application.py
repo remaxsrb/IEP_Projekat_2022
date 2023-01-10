@@ -2,7 +2,7 @@ import csv
 import io
 
 from flask import Flask, request, jsonify, json, Response
-from flask_jwt_extended import jwt_required, JWTManager
+from flask_jwt_extended import jwt_required, JWTManager, get_jwt
 from redis import Redis
 from configuration import Configuration
 from roleCheck import role_check
@@ -13,9 +13,10 @@ jwt = JWTManager(application)
 
 
 @application.route('/update', methods=["POST"])
-@jwt_required(refresh=True)
+@jwt_required()
 @role_check("warehouseworker")
 def update_stock():
+
     if request.files["file"] is None:
         return jsonify(message='Field file missing.'), 400
 

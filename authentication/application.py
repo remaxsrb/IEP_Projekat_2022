@@ -1,7 +1,6 @@
 from flask import Flask, request, Response, jsonify
 from configuration import Configuration
 from models import database, User, UserRole
-from email.utils import parseaddr
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, create_refresh_token, get_jwt, \
     get_jwt_identity
 from sqlalchemy import and_
@@ -10,9 +9,9 @@ import re
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
+jwt = JWTManager(application)
 
 
-# noinspection DuplicatedCode
 @application.route("/register", methods=["POST"])
 def register():
     forename = request.json.get('forename', '')
@@ -21,30 +20,34 @@ def register():
     password = request.json.get('password', '')
     usertype = request.json.get('isCustomer', '')
 
-    if len(forename) == 0 or forename == ' ':
+    # U testovima strinogvi sa jednim blanko znakom se smatraju validnim sto sam ja u kodu stavio kao nevalidno
+
+    if len(forename) == 0 or not forename:
         return jsonify(message='Field forename is missing.'), 400
-    if len(surname) == 0 or surname == ' ':
+    if len(surname) == 0 or not surname:
         return jsonify(message='Field surname is missing.'), 400
-    if len(email) == 0:
+    if len(email) == 0 or not email:
         return jsonify(message='Field email is missing.'), 400
-    if len(password) == 0:
+    if len(password) == 0 or not password:
         return jsonify(message='Field password is missing.'), 400
     if len(str(usertype)) == 0:
         return jsonify(message='Field isCustomer is missing.'), 400
 
-    result = parseaddr(email)
-    if len(result[1]) == 0:
+    valid_email = re.fullmatch(r"(^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-z.]{2,}$)", email)
+
+    if not valid_email:
         return jsonify(message='Invalid email.'), 400
+
+    password_valid = 8 <= len(password) <= 256 and re.search(r"\d", password) \
+                     and re.search(r"[a-z]", password) and re.search(r"[A-Z]", password)
+
+    if not password_valid:
+        return jsonify(message='Invalid password.'), 400
 
     email_exists = User.query.filter(User.email == email).first()
 
     if email_exists:
         return jsonify(message='Email already exists.'), 400
-
-    password_valid = re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$", password)
-
-    if not password_valid:
-        return jsonify(message='Invalid password.'), 400
 
     user = User(email=email, password=password, forename=forename, surname=surname)
     database.session.add(user)
@@ -52,7 +55,7 @@ def register():
 
     user_role = None
 
-    if usertype == 'True':
+    if usertype:
         user_role = UserRole(userId=user.id, roleId=2)
     else:
         user_role = UserRole(userId=user.id, roleId=3)
@@ -60,10 +63,7 @@ def register():
     database.session.add(user_role)
     database.session.commit()
 
-    return Response("Registration successful!", status=200)
-
-
-jwt = JWTManager(application)
+    return Response(status=200)
 
 
 @application.route('/login', methods=['POST'])
@@ -71,14 +71,15 @@ def login():
     email = request.json.get('email', '')
     password = request.json.get('password', '')
 
-    if len(email) == 0:
+    if len(email) == 0 or not email:
         return jsonify(message='Field email is missing.'), 400
 
-    if len(password) == 0:
+    if len(password) == 0 or not password:
         return jsonify(message='Field password is missing.'), 400
 
-    result = parseaddr(email)
-    if len(result[1]) == 0:
+    valid_email = re.fullmatch(r"(^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-z.]{2,}$)", email)
+
+    if not valid_email:
         return jsonify(message='Invalid email.'), 400
 
     user = User.query.filter(and_(User.email == email, User.password == password)).first()
@@ -95,7 +96,7 @@ def login():
     access_token = create_access_token(identity=user.email, additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=user.email, additional_claims=additional_claims)
 
-    return jsonify(accessToken=access_token, refreshToken=refresh_token)
+    return jsonify(accessToken=access_token, refreshToken=refresh_token), 200
 
 
 @application.route("/refresh", methods=["POST"])
@@ -106,12 +107,14 @@ def refresh():
 
     additional_claims = {
 
-        'firstname': refresh_claims['firstname'],
-        'lastname': refresh_claims['lastname'],
+        'forename': refresh_claims['forename'],
+        'surname': refresh_claims['surname'],
         'roles': refresh_claims['roles']
     }
 
-    return Response(create_access_token(identity=identity, additional_claims=additional_claims), status=200)
+    access_token = create_access_token(identity=identity, additional_claims=additional_claims)
+
+    return jsonify(accessToken=access_token), 200
 
 
 @application.route('/delete', methods=['POST'])
@@ -119,11 +122,12 @@ def refresh():
 def delete():
     email = request.json.get('email', '')
 
-    if len(email) == 0:
+    if len(email) == 0 or not email:
         return jsonify(message='Field email is missing.'), 400
 
-    result = parseaddr(email)
-    if len(result[1]) == 0:
+    valid_email = re.fullmatch(r"(^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-z.]{2,}$)", email)
+
+    if not valid_email:
         return jsonify(message='Invalid email.'), 400
 
     user = User.query.filter(User.email == email).first()
@@ -134,7 +138,7 @@ def delete():
     database.session.delete(user)
     database.session.commit()
 
-    return Response('', status=200)
+    return Response(status=200)
 
 
 if __name__ == '__main__':

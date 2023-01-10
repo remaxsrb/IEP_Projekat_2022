@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, get_jwt
 
 from configuration import Configuration
 from models import database, Product, Category, ProductCategory, OrderedProducts
@@ -15,6 +15,7 @@ jwt = JWTManager(application)
 @application.route('/productStatistics', methods=["GET"])
 @role_check("admin")
 def product_statistics():
+
     query_result = Product.query.join(OrderedProducts).group_by(Product.name).with_entities \
         (Product.name, func.sum(OrderedProducts.requested_quantity).label("sold"),
          func.sum(OrderedProducts.requested_quantity - OrderedProducts.received_quantity).label("waiting"))
@@ -34,8 +35,13 @@ def product_statistics():
 
 
 @application.route('/categoryStatistics', methods=["GET"])
-@role_check("admin")
+# @role_check("admin")
 def category_statistics():
+
+    refresh_claims = get_jwt()
+    if refresh_claims["roles"].strip() not in ["admin"]:
+        return jsonify(msg="Missing authorization header"), 401
+
     query_result = Category.query.outerjoin(ProductCategory).outerjoin \
         (OrderedProducts, ProductCategory.productId == OrderedProducts.productId).group_by(Category.name).order_by \
         (func.sum(func.coalesce(OrderedProducts.requested_quantity, 0)).desc(), Category.name) \
