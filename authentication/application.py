@@ -1,8 +1,10 @@
 from flask import Flask, request, Response, jsonify
+
+from role_check import role_check
 from configuration import Configuration
 from models import database, User
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, create_refresh_token, get_jwt, \
-    get_jwt_identity
+    get_jwt_identity, verify_jwt_in_request
 from sqlalchemy import and_
 
 import re
@@ -54,7 +56,7 @@ def register():
     database.session.add(user)
     database.session.commit()
 
-    return jsonify(message='Registration successful!'), 200
+    return Response('', status=200)
 
 
 jwt = JWTManager(application)
@@ -112,13 +114,8 @@ def refresh():
 
 
 @application.route('/delete', methods=['POST'])
-@jwt_required(refresh=True)
+@role_check(role='admin')
 def delete():
-    identity = get_jwt_identity()
-    refresh_claims = get_jwt()
-    if 'admin' not in refresh_claims['roles']:
-        return jsonify(msg='Missing Authorization Header'), 401
-
     email = request.json.get('email', '')
 
     if len(email) == 0 or not email:

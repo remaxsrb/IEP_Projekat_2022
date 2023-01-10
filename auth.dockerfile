@@ -6,6 +6,7 @@ WORKDIR /opt/src/authentication
 COPY authentication/application.py ./application.py
 COPY authentication/configuration.py ./configuration.py
 COPY authentication/models.py ./models.py
+COPY authentication/role_check.py ./role_check.py
 COPY authentication/requirements.txt ./requirements.txt
 
 RUN pip install -r ./requirements.txt
