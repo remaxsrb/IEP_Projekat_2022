@@ -13,7 +13,7 @@ import logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
-def checkProducts():
+def check_products():
     with Redis(host=Configuration.REDIS_HOST) as redis:
 
         subscription = redis.pubsub()
@@ -99,5 +99,5 @@ def checkProducts():
                         logging.debug(f'Existing and imported product categories are not matching')
 
 
-t1 = threading.Thread(target=checkProducts)
+t1 = threading.Thread(target=check_products)
 t1.start()

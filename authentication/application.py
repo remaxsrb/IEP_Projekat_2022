@@ -11,6 +11,7 @@ import re
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
+jwt = JWTManager(application)
 
 
 @application.route("/register", methods=["POST"])
@@ -57,9 +58,6 @@ def register():
     database.session.commit()
 
     return Response('', status=200)
-
-
-jwt = JWTManager(application)
 
 
 @application.route('/login', methods=['POST'])

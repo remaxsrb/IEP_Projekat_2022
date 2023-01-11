@@ -11,7 +11,7 @@ databasePort = os.environ["MYSQL_PORT"]
 class Configuration:
 
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{databaseUser}:{databasePass}@{databaseHost}:{databasePort}/{databaseName}"
-    JWT_SECRET_KEY = "test_secret_key"
+    JWT_SECRET_KEY = "JWTSecretDevKey"
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     REDIS_HOST = "redis"

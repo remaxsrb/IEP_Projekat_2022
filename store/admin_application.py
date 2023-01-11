@@ -35,7 +35,7 @@ def product_statistics():
 
 
 @application.route('/categoryStatistics', methods=["GET"])
-# @role_check("admin")
+@role_check("admin")
 def category_statistics():
 
     refresh_claims = get_jwt()

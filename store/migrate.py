@@ -15,8 +15,11 @@ done = False
 while not done:
     try:
 
-        if not database_exists(application.config["SQLALCHEMY_DATABASE_URI"]):
-            create_database(application.config["SQLALCHEMY_DATABASE_URI"])
+        if not database_exists(application.config['SQLALCHEMY_DATABASE_URI']):
+            create_database(application.config['SQLALCHEMY_DATABASE_URI'])
+        else:
+            drop_database(application.config['SQLALCHEMY_DATABASE_URI'])
+            create_database(application.config['SQLALCHEMY_DATABASE_URI'])
 
         database.init_app(application)
 
