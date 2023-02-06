@@ -1,4 +1,6 @@
+from flask import Flask
 from redis import Redis
+from database import Session
 from sqlalchemy import and_
 
 from configuration import Configuration
@@ -11,6 +13,16 @@ import json
 import logging
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+session = Session()
+
+
+def check_categories(categories1, categories2):
+    for curr_category in categories1:
+        if curr_category not in categories2:
+            return False
+
+    return True
 
 
 def check_products():
@@ -29,7 +41,6 @@ def check_products():
                 logging.debug(data)
 
                 product_categories = data.get('product_categories')
-                incoming_product_categories_list = product_categories.split("|")
                 product_name = data.get('product_name')
                 product_delivery_quantity = data.get('product_amount')
                 product_delivery_price = data.get('product_price')
@@ -43,7 +54,7 @@ def check_products():
                     database.session.add(product)
                     database.session.commit()
 
-                    for product_category in incoming_product_categories_list:
+                    for product_category in product_categories:
                         category = Category(product_category)
                         database.session.add(category)
                         database.session.commit()
@@ -54,15 +65,17 @@ def check_products():
                 else:
 
                     existing_categories_db.sort()
-                    incoming_product_categories_list.sort()
+                    product_categories.sort()
 
-                    if existing_categories_db == incoming_product_categories_list:
+                    if existing_categories_db == product_categories:
 
                         product = Product.query.filter(Product.name == product_name).first()
 
-                        current_product_price = database.session.query(Product.price).filter_by(name=product_name).first()
+                        current_product_price = database.session.query(Product.price).filter_by(
+                            name=product_name).first()
 
-                        current_product_stock = database.session.query(Product.stock).filter_by(name=product_name).first()
+                        current_product_stock = database.session.query(Product.stock).filter_by(
+                            name=product_name).first()
 
                         new_price = (current_product_stock * current_product_price + product_delivery_quantity *
                                      product_delivery_price) / (current_product_stock + product_delivery_quantity)
@@ -99,5 +112,5 @@ def check_products():
                         logging.debug(f'Existing and imported product categories are not matching')
 
 
-t1 = threading.Thread(target=check_products)
-t1.start()
+thread1 = threading.Thread(target=check_products)
+thread1.start()
