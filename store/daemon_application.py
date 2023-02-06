@@ -1,22 +1,19 @@
 from flask import Flask
 from redis import Redis
-from database import Session
+
 from sqlalchemy import and_
 
 from configuration import Configuration
 from models import database
-from models import Product, Category, ProductCategory, OrderedProducts, Order
+from models import Product, Category, ProductCategory, OrderedProduct, Order
 
-import sys
-import threading
 import json
-import logging
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-session = Session()
+application = Flask(__name__)
+application.config.from_object(Configuration)
 
 
+# radi lakseg proveravanja kategorija
 def check_categories(categories1, categories2):
     for curr_category in categories1:
         if curr_category not in categories2:
@@ -25,92 +22,89 @@ def check_categories(categories1, categories2):
     return True
 
 
-def check_products():
+if __name__ == "__main__":
+
+    database.init_app(application)
+
     with Redis(host=Configuration.REDIS_HOST) as redis:
+        incoming_product = json.loads(redis.blpop(Configuration.REDIS_WAREHOUSE_QUEUE)[1])
+        print(f"ovo je json: {incoming_product}", flush=True)
+        while True:
+            with application.app_context() as context:
+                incoming_product_categories = incoming_product["product_categories"]
+                incoming_product_name = incoming_product["product_name"]
+                product_delivery_quantity = int(incoming_product["product_amount"])
+                product_delivery_price = float(incoming_product["product_price"])
 
-        subscription = redis.pubsub()
-        subscription.subscribe(Configuration.REDIS_WAREHOUSE_QUEUE)
+                existing_product = Product.query.filter(Product.name == incoming_product_name).first()
 
-        for message in subscription.listen():
+                if existing_product is None:
 
-            if message['type'] == 'message':
-                logging.debug(message)
+                    # nema proizvoda u bazi, ubacuje se i proveravaju se kategorije
 
-                data = json.loads(message['data'])
-
-                logging.debug(data)
-
-                product_categories = data.get('product_categories')
-                product_name = data.get('product_name')
-                product_delivery_quantity = data.get('product_amount')
-                product_delivery_price = data.get('product_price')
-
-                existing_products_db = database.session.query(Product.name).all()
-                existing_categories_db = database.session.query(Category.name).all()
-                database.session.close()
-
-                if product_name not in existing_products_db:
-                    product = Product(name=product_name, price=product_delivery_price, stock=product_delivery_quantity)
-                    database.session.add(product)
+                    new_product = Product(name=incoming_product_name, price=product_delivery_price,
+                                          stock=product_delivery_quantity)
+                    database.session.add(new_product)
                     database.session.commit()
 
-                    for product_category in product_categories:
-                        category = Category(product_category)
-                        database.session.add(category)
-                        database.session.commit()
+                    for product_category in incoming_product_categories:
 
-                        product_category_rel = ProductCategory(productId=product.id, categoryId=category.id)
-                        database.session.add(product_category_rel)
-                        database.session.commit()
+                        existing_category = Category.query.filter(Category.name == product_category).first()
+
+                        if existing_category is None:
+                            # ne postoji kategorija te se dodaje
+
+                            new_category = Category(name=product_category)
+                            database.session.add(new_category)
+                            database.session.commit()
+
+                            product_category_relationship = ProductCategory(product_id=new_product.id,
+                                                                            category_id=new_category.id)
+                            database.session.add(product_category_relationship)
+                            database.session.commit()
                 else:
+                    # proizvod postoji
 
-                    existing_categories_db.sort()
-                    product_categories.sort()
+                    existing_product_categories = [Category.name for category in existing_product.categories]
 
-                    if existing_categories_db == product_categories:
+                    if check_categories(incoming_product_categories, existing_product_categories):
+                        new_price = ((existing_product.stock * existing_product.price + product_delivery_quantity *
+                                      product_delivery_price) / (
+                                             existing_product.stock + product_delivery_quantity))
+                        existing_product.price = new_price
+                        existing_product.stock += product_delivery_quantity
 
-                        product = Product.query.filter(Product.name == product_name).first()
-
-                        current_product_price = database.session.query(Product.price).filter_by(
-                            name=product_name).first()
-
-                        current_product_stock = database.session.query(Product.stock).filter_by(
-                            name=product_name).first()
-
-                        new_price = (current_product_stock * current_product_price + product_delivery_quantity *
-                                     product_delivery_price) / (current_product_stock + product_delivery_quantity)
-
-                        product.price = new_price
                         database.session.commit()
 
-                        potential_orders = OrderedProducts.query().filter(and_(
-                            OrderedProducts.productId == product.id,
-                            OrderedProducts.received_quantity < OrderedProducts.requested_quantity
-                        )).all()
+                    potential_waiting_orders = database.session.query(OrderedProduct).filter(and_(
+                        OrderedProduct.product_id == existing_product.id,
+                        OrderedProduct.received_quantity < OrderedProduct.requested_quantity
+                    )).all()
 
-                        for ordered_product in potential_orders:
+                    for ordered_product in potential_waiting_orders:
+
+                        if existing_product.stock >= ordered_product.requested_quantity:
+
                             needed_quantity = ordered_product.requested_quantity - ordered_product.recieved_quantity
-                            provided_quantity = needed_quantity if needed_quantity < product.stock else product.stock
-                            product.stock -= provided_quantity
+                            provided_quantity = needed_quantity if needed_quantity < existing_product.stock \
+                                else existing_product.stock
+
+                            existing_product.stock -= provided_quantity
                             ordered_product.recieved_quantity += provided_quantity
-
-                            completed_order = OrderedProducts.query().filter(and_(
-                                OrderedProducts.orderId == ordered_product.orderId,
-                                OrderedProducts.received_quantity < OrderedProducts.requested_quantity
-                            )).first()
-
-                            if not completed_order:
-                                order = Order.query.filter(Order.id == ordered_product.orderId).first()
-                                order.status = True
 
                             database.session.commit()
 
-                            if product.stock == 0:
-                                break
+                            completed_order = database.session.query(OrderedProduct).filter(and_(
+                                OrderedProduct.order_id == ordered_product.order_id,
+                                OrderedProduct.received_quantity == OrderedProduct.requested_quantity
+                            )).first()
 
-                    else:
-                        logging.debug(f'Existing and imported product categories are not matching')
+                            if completed_order:
+                                order = Order.query.filter(Order.id == ordered_product.order_id).first()
+                                order.status = True
+                                database.session.commit()
 
-
-thread1 = threading.Thread(target=check_products)
-thread1.start()
+                            else:
+                                ordered_product.recieved_quantity += provided_quantity
+                                existing_product.stock = 0
+                                database.session.commit()

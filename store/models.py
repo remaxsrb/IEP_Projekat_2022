@@ -4,52 +4,52 @@ database = SQLAlchemy()
 
 
 class ProductCategory(database.Model):
-    __tablename__ = "productcategories"
+    __tablename__ = "product_category"
+
     id = database.Column(database.Integer, primary_key=True)
-    productId = database.Column(database.Integer, database.ForeignKey("products.id"), nullable=False)
-    categoryId = database.Column(database.Integer, database.ForeignKey("categories.id"), nullable=False)
+    product_id = database.Column(database.Integer, database.ForeignKey("products.id"), nullable=False)
+    category_id = database.Column(database.Integer, database.ForeignKey("categories.id"), nullable=False)
 
 
-class OrderedProducts(database.Model):
-    __tablename__ = "orderedproducts"
+class OrderedProduct(database.Model):
+    __tablename__ = "ordered_product"
+
     id = database.Column(database.Integer, primary_key=True)
-    productId = database.Column(database.Integer, database.ForeignKey("products.id"), nullable=False)
-    orderId = database.Column(database.Integer, database.ForeignKey("orders.id"), nullable=False)
-    requested_quantity = database.Column(database.Integer, nullable=False)
+    order_id = database.Column(database.Integer, database.ForeignKey("orders.id"), nullable=False)
+    product_id = database.Column(database.Integer, database.ForeignKey("products.id"), nullable=False)
+    price = database.Column(database.Float, nullable=False)
     received_quantity = database.Column(database.Integer, nullable=False)
+    requested_quantity = database.Column(database.Integer, nullable=False)
 
 
 class Product(database.Model):
     __tablename__ = "products"
+
     id = database.Column(database.Integer, primary_key=True)
-    name = database.Column(database.String(256), nullable=False, unique=True)
+    name = database.Column(database.String(256), nullable=False)
     price = database.Column(database.Float, nullable=False)
     stock = database.Column(database.Integer, nullable=False)
 
-    categories = database.relationship("Category", secondary=ProductCategory.__tablename__, back_populates="products")
-    orders = database.relationship("Order", secondary=ProductCategory.__tablename__, back_populates="products")
+    categories = database.relationship("Category", secondary=ProductCategory.__table__, back_populates="products")
+    orders = database.relationship("Order", secondary=OrderedProduct.__table__, back_populates="products")
 
-    def __repr__(self):
-        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
 
 class Category(database.Model):
     __tablename__ = "categories"
+
     id = database.Column(database.Integer, primary_key=True)
-    name = database.Column(database.String(256), nullable=False, unique=True)
+    name = database.Column(database.String(256), nullable=False)
 
-    products = database.relationship("Product", secondary=ProductCategory.__tablename__, back_populates="categories")
+    products = database.relationship("Product", secondary=ProductCategory.__table__, back_populates="categories")
 
-    def __repr__(self):
-        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
+
 class Order(database.Model):
     __tablename__ = "orders"
+
     id = database.Column(database.Integer, primary_key=True)
-    totalprice = database.Column(database.FLOAT, nullable=False)
-    timestamp = database.Column(database.DateTime, nullable=False)
-    status = database.Column(database.Boolean, nullable=False)
-    customer = database.Column(database.String(256), nullable=False, unique=True)
+    price = database.Column(database.Float, nullable=False)
+    status = database.Column(database.String(256), nullable=False)
+    timestamp = database.Column(database.String(256), nullable=False)
+    customer = database.Column(database.String(256), nullable=False)
 
-    products = database.relationship("Product", secondary=ProductCategory.__tablename__, back_populates="orders")
-
-    def __repr__(self):
-        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
+    products = database.relationship("Product", secondary=OrderedProduct.__table__, back_populates="orders")

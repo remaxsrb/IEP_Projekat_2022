@@ -7,4 +7,4 @@ engine = create_engine(Configuration.SQLALCHEMY_DATABASE_URI)
 
 Base = declarative_base()
 
-Session = sessionmaker(bind = engine)
+Session = sessionmaker(bind=engine)
