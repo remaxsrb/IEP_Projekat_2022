@@ -95,7 +95,7 @@ if __name__ == "__main__":
                         for ordered_product in potential_waiting_orders:
 
                             needed_quantity = ordered_product.requested_quantity - ordered_product.received_quantity
-                            provided_quantity = needed_quantity if needed_quantity < existing_product.stock \
+                            provided_quantity = needed_quantity if needed_quantity <= existing_product.stock \
                                 else existing_product.stock
 
                             if existing_product.stock >= needed_quantity:
@@ -107,10 +107,13 @@ if __name__ == "__main__":
 
                                 waiting_order = OrderedProduct.query.filter(and_(
                                     OrderedProduct.order_id == ordered_product.order_id,
-                                    OrderedProduct.received_quantity == OrderedProduct.requested_quantity
+                                    OrderedProduct.received_quantity < OrderedProduct.requested_quantity
                                 )).first()
 
-                                if waiting_order is not None:
+                                # iz nekog razloga ne moze OrderedProduct.received_quantity ==
+                                # OrderedProduct.requested_quantity pa waiting_order is not None
+
+                                if waiting_order is None:
                                     order = Order.query.filter(Order.id == ordered_product.order_id).first()
                                     order.status = "COMPLETE"
                                     database.session.commit()
