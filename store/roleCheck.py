@@ -1,7 +1,7 @@
 import json
 from functools import wraps
 from flask_jwt_extended import verify_jwt_in_request, get_jwt
-from flask import Response, jsonify
+from flask import Response
 
 
 def role_check(role):

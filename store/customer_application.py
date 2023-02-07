@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, json, Response
+from flask import Flask, request, json, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity, JWTManager, get_jwt
 from configuration import Configuration
 from roleCheck import role_check

@@ -25,12 +25,11 @@ def check_categories(categories1, categories2):
 if __name__ == "__main__":
 
     database.init_app(application)
-
-    with Redis(host=Configuration.REDIS_HOST) as redis:
-        incoming_product = json.loads(redis.blpop(Configuration.REDIS_WAREHOUSE_QUEUE)[1])
-        print(f"ovo je json: {incoming_product}", flush=True)
-        while True:
+    while True:
+        with Redis(host=Configuration.REDIS_HOST) as redis:
             with application.app_context() as context:
+
+                incoming_product = json.loads(redis.blpop(Configuration.REDIS_WAREHOUSE_QUEUE)[1])
 
                 incoming_product_categories = incoming_product["product_categories"].split("|")
                 incoming_product_name = incoming_product["product_name"]
@@ -63,6 +62,7 @@ if __name__ == "__main__":
                                                                             category_id=new_category.id)
                             database.session.add(product_category_relationship)
                             database.session.commit()
+
                 else:
                     # proizvod postoji
 
@@ -109,3 +109,4 @@ if __name__ == "__main__":
                                 ordered_product.recieved_quantity += provided_quantity
                                 existing_product.stock = 0
                                 database.session.commit()
+
