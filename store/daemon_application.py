@@ -63,6 +63,12 @@ if __name__ == "__main__":
                             database.session.add(product_category_relationship)
                             database.session.commit()
 
+                        else:
+                            product_category_relationship = ProductCategory(product_id=new_product.id,
+                                                                            category_id=existing_category.id)
+                            database.session.add(product_category_relationship)
+                            database.session.commit()
+
                 else:
                     # proizvod postoji
 

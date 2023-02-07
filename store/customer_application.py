@@ -11,39 +11,37 @@ application.config.from_object(Configuration)
 jwt = JWTManager(application)
 
 
-def check_categories(product, cat):
-    for category in product.categories:
-        if cat in category.name:
-            return True
-
-
-@application.route('/search?name=<PRODUCT_NAME>&category=<CATEGORY_NAME>', methods=["GET"])
+@application.route('/search', methods=["GET"])
 @jwt_required()
 @role_check("customer")
-def search(name, category):
+def search():
 
-    if "requests" not in request.json:
-        return Response(json.dumps({"message": "Field requests is missing."}), status=400)
-    # kategorije koje sadrze category parametar u nazivu
-    categories = Category.query.join(ProductCategory).join(Product).filter(
-        and_(
-            Category.name.like(f"%{category}%"),
-            Product.name.like(f"%{name}%")
-        )
-    ).distinct(Category.name)
+    name = request.args.get("name")
+    category = request.args.get("category")
 
-    # proizvodi koje sadrze product parametar u nazivu
+    categories = Category.query.all()
+    products = Product.query.all()
+
+    if name is not None:
+        products = Product.query.filter(Product.name.like(f"%{name}%")).all()
+
+        categories = Category.query.join(ProductCategory).join(Product).filter(
+            Product.name.like(f"%{name}%")).all()
+
+    if category is not None:
+        categories = Category.query.filter(Category.name.like(f"%{category}%")).all()
+
+        products = Product.query.join(ProductCategory).join(Category).filter(
+            Category.name.like(f"%{category}%")).all()
 
     categories = [category.name for category in categories]
-    products = Product.query.filter(Product.name.like(f"%{name}%"))
-    products = [product for product in products if check_categories(product, category)]
 
     products = [{
         "categories": [category.name for category in product.categories],
         "id": product.id,
         "name": product.name,
         "price": product.price,
-        "quantity": product.quantity
+        "quantity": product.stock
     } for product in products]
 
     response = {
@@ -182,4 +180,5 @@ def search(name, category):
 
 
 if __name__ == '__main__':
+    database.init_app(application)
     application.run(debug=True, host='0.0.0.0', port=5002)
