@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import DateTime, func
 
 database = SQLAlchemy()
 
@@ -49,7 +50,7 @@ class Order(database.Model):
     id = database.Column(database.Integer, primary_key=True)
     price = database.Column(database.Float, nullable=False)
     status = database.Column(database.String(256), nullable=False)
-    timestamp = database.Column(database.String(256), nullable=False)
+    timestamp = database.Column(DateTime(timezone=False), server_default=func.now())
     customer = database.Column(database.String(256), nullable=False)
 
     products = database.relationship("Product", secondary=OrderedProduct.__table__, back_populates="orders")
