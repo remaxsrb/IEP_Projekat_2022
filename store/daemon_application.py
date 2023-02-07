@@ -31,7 +31,8 @@ if __name__ == "__main__":
         print(f"ovo je json: {incoming_product}", flush=True)
         while True:
             with application.app_context() as context:
-                incoming_product_categories = incoming_product["product_categories"]
+
+                incoming_product_categories = incoming_product["product_categories"].split("|")
                 incoming_product_name = incoming_product["product_name"]
                 product_delivery_quantity = int(incoming_product["product_amount"])
                 product_delivery_price = float(incoming_product["product_price"])

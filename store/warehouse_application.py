@@ -51,11 +51,9 @@ def update_stock():
 
         # zbog nacina na koji redis radi ovde je potrebno parsirati ulazni fajl u suprotnom ce redis baciti izuzetak
 
-        categories = productRow[0].split("|")
-
         products.append(
             {
-                'product_categories': categories[0],
+                'product_categories': productRow[0],
                 'product_name': productRow[1],
                 'product_amount': product_amount,
                 'product_price': product_price,

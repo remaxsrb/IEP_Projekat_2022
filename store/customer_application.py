@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, json, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity, JWTManager, get_jwt
 from configuration import Configuration
 from roleCheck import role_check
-from models import Product, ProductCategory, Category, Order, database, OrderedProducts
+from models import Product, ProductCategory, Category, Order, database, OrderedProduct
 from sqlalchemy import and_, or_
 from datetime import datetime
 
