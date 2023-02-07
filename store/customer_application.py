@@ -101,11 +101,11 @@ def order():
         total_price += total_product_price
         request_number += 1
 
-    new_order = Order(price=total_price, status="PENDING", customer=customer)
+    new_order = Order(price=total_price, status="COMPLETE", customer=customer)
     database.session.add(new_order)
     database.session.commit()
 
-    waiting = True
+    waiting = False
 
     # mozda postoji bolje resenje od toga da dva puta prolazim kroz request niz
 
@@ -122,16 +122,17 @@ def order():
             database.session.add(ordered_product)
             product.stock -= requested_product_quantity
             database.session.commit()
-            waiting = False
+
         else:
             ordered_product = OrderedProduct(order_id=new_order.id, product_id=product.id, received_quantity=product.stock,
                                              requested_quantity=requested_product_quantity, price=product.price)
             database.session.add(ordered_product)
             product.stock = 0
             database.session.commit()
+            waiting = True
 
-    if not waiting:
-        new_order.status = "COMPLETE"
+    if waiting:
+        new_order.status = "PENDING"
         database.session.commit()
 
     return Response(json.dumps({"id": new_order.id}), 200)
@@ -164,4 +165,4 @@ def status():
 
 if __name__ == '__main__':
     database.init_app(application)
-    application.run(debug=True, host='0.0.0.0', port=5002)
+    application.run(debug=True, host='0.0.0.0', port=5001)

@@ -76,9 +76,6 @@ if __name__ == "__main__":
                     # proizvod postoji
                     existing_product_categories = [category.name for category in existing_product.categories]
 
-                    print(f"existing_product_categories: {existing_product_categories}", flush=True)
-                    print(f"incoming_product_categories: {incoming_product_categories}", flush=True)
-
                     if check_categories(incoming_product_categories, existing_product_categories):
 
                         new_price = ((existing_product.stock * existing_product.price + product_delivery_quantity *
@@ -90,35 +87,35 @@ if __name__ == "__main__":
 
                         database.session.commit()
 
-                        potential_waiting_orders = database.session.query(OrderedProduct).join(Order).filter(and_(
+                        potential_waiting_orders = OrderedProduct.query.filter(and_(
                             OrderedProduct.product_id == existing_product.id,
                             OrderedProduct.received_quantity < OrderedProduct.requested_quantity
-                        )).order_by(Order.timestamp).all()
+                        )).all()
 
                         for ordered_product in potential_waiting_orders:
 
-                            if existing_product.stock >= ordered_product.requested_quantity:
+                            needed_quantity = ordered_product.requested_quantity - ordered_product.received_quantity
+                            provided_quantity = needed_quantity if needed_quantity < existing_product.stock \
+                                else existing_product.stock
 
-                                needed_quantity = ordered_product.requested_quantity - ordered_product.recieved_quantity
-                                provided_quantity = needed_quantity if needed_quantity < existing_product.stock \
-                                    else existing_product.stock
+                            if existing_product.stock >= needed_quantity:
 
                                 existing_product.stock -= provided_quantity
-                                ordered_product.recieved_quantity += provided_quantity
+                                ordered_product.received_quantity += provided_quantity
 
                                 database.session.commit()
 
-                                completed_order = database.session.query(OrderedProduct).filter(and_(
+                                waiting_order = OrderedProduct.query.filter(and_(
                                     OrderedProduct.order_id == ordered_product.order_id,
                                     OrderedProduct.received_quantity == OrderedProduct.requested_quantity
                                 )).first()
 
-                                if completed_order is not None:
+                                if waiting_order is not None:
                                     order = Order.query.filter(Order.id == ordered_product.order_id).first()
                                     order.status = "COMPLETE"
                                     database.session.commit()
 
-                                else:
-                                    ordered_product.recieved_quantity += provided_quantity
-                                    existing_product.stock = 0
-                                    database.session.commit()
+                            else:
+                                ordered_product.received_quantity += provided_quantity
+                                existing_product.stock = 0
+                                database.session.commit()

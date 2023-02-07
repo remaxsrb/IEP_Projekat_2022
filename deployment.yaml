@@ -117,7 +117,7 @@ services:
     depends_on:
       - storeDBMigration
     ports:
-      - "5001:5001"
+      - "5002:5002"
     networks:
       warehouse:
     build:
@@ -151,7 +151,7 @@ services:
     depends_on:
       - storeDBMigration
     ports:
-      - "5002:5002"
+      - "5001:5001"
     networks:
       customer:
     build:
