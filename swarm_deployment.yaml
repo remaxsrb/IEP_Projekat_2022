@@ -1,0 +1,192 @@
+version: '3'
+
+services:
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    networks:
+      authentication:
+      warehouse:
+      daemon:
+      customer:
+      admin:
+
+  redis:
+    image: redis
+    networks:
+      warehouse:
+      daemon:
+
+  authenticationDB:
+    image: mysql
+    environment:
+      - "MYSQL_HOST=authentication"
+      - "MYSQL_USER=authentication"
+      - "MYSQL_PASSWORD=authentication"
+      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+    volumes:
+      - authentication_db_data:/var/lib/mysql
+    networks:
+      authentication:
+
+  authDBMigration:
+    image: authenticationdbmigration
+    environment:
+      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_USER=authentication"
+      - "MYSQL_PASSWORD=authentication"
+      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+    depends_on:
+      - authenticationDB
+
+    networks:
+      authentication:
+    build:
+      context: ./authentication
+      dockerfile: authenticationdbmigration.dockerfile
+
+  authentication:
+    image: authentication
+    environment:
+      - "MYSQL_HOST=authenticationdb"
+      - "MYSQL_USER=authentication"
+      - "MYSQL_PASSWORD=authentication"
+      - "MYSQL_DATABASE=authentication"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+    depends_on:
+      - authDBMigration
+    ports:
+      - "5000:5000"
+    networks:
+      authentication:
+    build:
+      context: .
+
+  storeDB:
+    image: mysql
+    environment:
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+
+    volumes:
+      - store_db_data:/var/lib/mysql
+    networks:
+      daemon:
+      customer:
+      admin:
+
+  storeDBMigration:
+    image: storedbmigration
+    environment:
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+
+    depends_on:
+      - storeDB
+    networks:
+      daemon:
+      customer:
+      admin:
+    build:
+      context: .
+      dockerfile: storedbmigration.dockerfile
+
+  warehouse:
+    image: warehouse
+    environment:
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+    depends_on:
+      - storeDBMigration
+    ports:
+      - "5002:5002"
+    networks:
+      warehouse:
+    build:
+      context: .
+      dockerfile: warehouse.dockerfile
+  daemon:
+    image: daemon
+    environment:
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+    depends_on:
+      - storeDBMigration
+    networks:
+      daemon:
+    build:
+      context: .
+      dockerfile: daemon.dockerfile
+  customer:
+    image: customer
+    environment:
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+    depends_on:
+      - storeDBMigration
+    ports:
+      - "5001:5001"
+    networks:
+      customer:
+    build:
+      context: .
+      dockerfile: customer.dockerfile
+  admin:
+    image: admin
+    environment:
+      - "MYSQL_HOST=storedb"
+      - "MYSQL_USER=store"
+      - "MYSQL_PASSWORD=store"
+      - "MYSQL_DATABASE=store"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_ROOT_PASSWORD=root"
+    depends_on:
+      - storeDBMigration
+    ports:
+      - "5003:5003"
+    networks:
+      admin:
+    build:
+      context: .
+      dockerfile: admin.dockerfile
+volumes:
+  authentication_db_data:
+  store_db_data:
+
+networks:
+  authentication:
+    driver: overlay
+  warehouse:
+    driver: overlay
+  daemon:
+    driver: overlay
+  customer:
+    driver: overlay
+  admin:
+    driver: overlay
