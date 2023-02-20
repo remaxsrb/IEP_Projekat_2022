@@ -41,9 +41,6 @@ services:
       - "MYSQL_DATABASE=authentication"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - authenticationDB
-
     networks:
       authentication:
     build:
@@ -59,8 +56,6 @@ services:
       - "MYSQL_DATABASE=authentication"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - authDBMigration
     ports:
       - "5000:5000"
     networks:
@@ -95,8 +90,6 @@ services:
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
 
-    depends_on:
-      - storeDB
     networks:
       daemon:
       customer:
@@ -107,6 +100,8 @@ services:
 
   warehouse:
     image: warehouse
+    deploy:
+      replicas: 3
     environment:
       - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
@@ -114,8 +109,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     ports:
       - "5002:5002"
     networks:
@@ -132,8 +125,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     networks:
       daemon:
     build:
@@ -141,6 +132,8 @@ services:
       dockerfile: daemon.dockerfile
   customer:
     image: customer
+    deploy:
+      replicas: 3
     environment:
       - "MYSQL_HOST=storedb"
       - "MYSQL_USER=store"
@@ -148,8 +141,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     ports:
       - "5001:5001"
     networks:
@@ -166,8 +157,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     ports:
       - "5003:5003"
     networks:

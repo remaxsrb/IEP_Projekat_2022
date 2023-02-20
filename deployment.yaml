@@ -41,9 +41,6 @@ services:
       - "MYSQL_DATABASE=authentication"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - authenticationDB
-
     networks:
       authentication:
     build:
@@ -59,8 +56,6 @@ services:
       - "MYSQL_DATABASE=authentication"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - authDBMigration
     ports:
       - "5000:5000"
     networks:
@@ -94,9 +89,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-
-    depends_on:
-      - storeDB
     networks:
       daemon:
       customer:
@@ -114,8 +106,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     ports:
       - "5002:5002"
     networks:
@@ -132,8 +122,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     networks:
       daemon:
     build:
@@ -148,8 +136,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     ports:
       - "5001:5001"
     networks:
@@ -166,8 +152,6 @@ services:
       - "MYSQL_DATABASE=store"
       - "MYSQL_PORT=3306"
       - "MYSQL_ROOT_PASSWORD=root"
-    depends_on:
-      - storeDBMigration
     ports:
       - "5003:5003"
     networks:
